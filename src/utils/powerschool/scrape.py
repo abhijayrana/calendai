@@ -194,7 +194,7 @@ class Scraper:
         self.session = requests.Session()
         self._progress = 0
         self._message = ""
-        print(status(self._progress, self._message))
+        # print(status(self._progress, self._message))
 
     @property
     def progress(self):
@@ -207,12 +207,12 @@ class Scraper:
     @progress.setter
     def progress(self, value: float):
         self._progress = value
-        print(status(self._progress, self._message))
+        # print(status(self._progress, self._message))
 
     @message.setter
     def message(self, value: str):
         self._message = value
-        print(status(self._progress, self._message))
+        # print(status(self._progress, self._message))
 
 
 class PowerschoolScraper(Scraper):
@@ -1116,33 +1116,33 @@ if __name__ == "__main__":
     school: str = sys.argv[1]
     user: str = sys.argv[2]
     password: str = sys.argv[3]
-    if school == "basis":
-        bs = BasisScraper()
-        try:
-            if bs.login(user, password):
-                bs.get_present()
-        except requests.Timeout:
-            print(json_format(False, "Could not connect to Schoology."))
-        except Exception as e:
-            # Error when something in Schoology breaks scraper
-            print(json_format(False, f"Error: {str(e)}"))
-            sys.exit()
-    else:
-        data_if_locked: dict = json.loads(sys.argv[4])  # arg must be stringified json
-        term_data_if_locked: dict = json.loads(sys.argv[5])  # arg must be stringified json
-        get_history: str = sys.argv[6]
-        ps = PowerschoolScraper(school)
-        try:
-            if ps.login(user, password):
-                if get_history in ['true', 'True', '1']:
-                    ps.get_history()
-                else:
-                    ps.get_present()
+    # if school == "basis":
+    #     bs = BasisScraper()
+    #     try:
+    #         if bs.login(user, password):
+    #             bs.get_present()
+    #     except requests.Timeout:
+    #         print(json_format(False, "Could not connect to Schoology."))
+    #     except Exception as e:
+    #         # Error when something in Schoology breaks scraper
+    #         print(json_format(False, f"Error: {str(e)}"))
+    #         sys.exit()
+    # else:
+    data_if_locked: dict = json.loads(sys.argv[4])  # arg must be stringified json
+    term_data_if_locked: dict = json.loads(sys.argv[5])  # arg must be stringified json
+    get_history: str = sys.argv[6]
+    ps = PowerschoolScraper(school)
+    try:
+        if ps.login(user, password):
+            if get_history in ['true', 'True', '1']:
+                ps.get_history()
             else:
-                ps.get_locked(data_if_locked, term_data_if_locked)
-        except requests.Timeout:
-            print(json_format(False, "Could not connect to PowerSchool."))
-        except Exception as e:
-            # Error when something in PowerSchool breaks scraper
-            print(json_format(False, f"Error: {str(traceback.format_exc())}"))
-            sys.exit()
+                ps.get_present()
+        else:
+            ps.get_locked(data_if_locked, term_data_if_locked)
+    except requests.Timeout:
+        print(json_format(False, "Could not connect to PowerSchool."))
+    except Exception as e:
+        # Error when something in PowerSchool breaks scraper
+        print(json_format(False, f"Error: {str(traceback.format_exc())}"))
+        sys.exit()

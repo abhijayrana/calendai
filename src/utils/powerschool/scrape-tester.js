@@ -2,7 +2,7 @@ const readlineSync = require("readline-sync");
 const scrape = require("./scrape.js");
 
 function processData(data) {
-  console.log(data);
+  console.log("data", data);
 }
 
 let password = readlineSync.question("Please enter your password: ", {

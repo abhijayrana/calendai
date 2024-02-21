@@ -1,28 +1,47 @@
 "use client";
-import { useState, useEffect, } from "react";
+import { useState, useEffect } from "react";
 import { trpc } from "@/app/_trpc/client";
-import fetchCurrentCoursesAndAssignments from "@/utils/canvas/api"
 
 export default function TodoList() {
+  // const {data, isLoading, isError, error} = trpc.powerschool.assignments.useQuery({url: 'https://bcp.instructure.com'})
 
-    const {data, isLoading, isError, error} = trpc.powerschool.assignments.useQuery({url: 'https://bcp.instructure.com:443'})
+  // if (isLoading) {
+  //     return <div>Loading...</div>;
+  // }
 
+  // if (isError) {
+  //     return <div>Error: {error.message}</div>;
+  // }
 
-    if (isLoading) {
-        return <div>Loading...</div>;
-    }
-    
-    if (isError) {
-        return <div>Error: {error.message}</div>;
-    }
-    
-    // Now you can safely use 'data'
-    console.log("assignments", data);
+  // console.log("assignments", data);
 
+  // const { data, isLoading, isError, error } =
+  //   trpc.powerschool.assignmentsWithCourse.useQuery({});
+
+  const { data, isLoading, isError, error } = trpc.powerschool.assignments.useQuery({});
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (isError) {
+    return <div>Error: {error.message}</div>;
+  }
+
+  console.log("assignments", data);
 
   return (
     <div>
-      <h1>hi</h1>
+      {/* {data[2].map((assignment) => (
+        <div key={assignment.id}>
+
+            <h2>{assignment.name}</h2>
+            <h4>{assignment.due_at}</h4>
+            <p>{assignment.description}</p>
+            </div>
+            )
+            )} */}
+      hi
     </div>
   );
 }
