@@ -7,31 +7,60 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
       Authorization: `Bearer ${token}`,
     };
 
-    // Fetch courses with the token in the headers
-    const coursesResponse = await fetch(`${process.env.URL}/api/v1/courses?enrollment_state=active`, { headers });
-    if (!coursesResponse.ok) {
-      throw new Error(`HTTP error! status: ${coursesResponse.status}`);
-    }
-    const courses = await coursesResponse.json();
+    console.log("Fetching initial courses...");
 
-    // Filter courses based on the start date
+    const initialCoursesResponse = await fetch(`${process.env.URL}/api/v1/courses?enrollment_state=active&per_page=10&page=1`, { headers });
+    if (!initialCoursesResponse.ok) {
+      throw new Error(`init HTTP error! status: ${initialCoursesResponse.status}`);
+    }
+    const linkHeader = initialCoursesResponse.headers.get('link');
+    const courses = await initialCoursesResponse.json();
+
+    console.log("Initial courses fetched:", courses.length);
+
+    const totalPages = extractTotalPages(linkHeader);
+
+    console.log("Total pages of courses:", totalPages);
+
+    for (let page = 2; page <= totalPages; page++) {
+      console.log(`Fetching courses page: ${page}`);
+      const coursesResponse = await fetch(`${process.env.URL}/api/v1/courses?enrollment_state=active&per_page=10&page=${page}`, { headers });
+      if (!coursesResponse.ok) {
+        console.error(`course searching HTTP error! status: ${coursesResponse.status}`);
+        throw new Error(`course searching HTTP error! status: ${coursesResponse.status}`);
+      }
+      const additionalCourses = await coursesResponse.json();
+      courses.push(...additionalCourses);
+    }
+
+    console.log("All courses fetched. Total courses:", courses.length);
+
     const currentDate = new Date();
     const currentCourses = courses.filter(course => new Date(course.start_at) <= currentDate);
 
-    // Iterate through current courses to fetch all assignments and their submissions
+    console.log("*********************************");
+    console.log("Courses", currentCourses)
+
+    console.log("Filtered current courses:", currentCourses.length);
+
     const coursesWithAssignmentsAndGrades = await Promise.all(currentCourses.map(async (course) => {
+      console.log(`Processing course: ${course.name}`);
+
       let assignments = [];
       let page = 1;
       let hasMorePages = true;
 
       while (hasMorePages) {
+        console.log(`Fetching assignments for course ${course.id}, page: ${page}`);
         const assignmentsResponse = await fetch(`${process.env.URL}/api/v1/courses/${course.id}/assignments?per_page=10&page=${page}`, { headers });
         if (!assignmentsResponse.ok) {
-          throw new Error(`HTTP error! status: ${assignmentsResponse.status}`);
+          console.error(`assignment search HTTP error! status: ${assignmentsResponse.status}, course ID: ${course.id}`);
+          throw new Error(`assignment search HTTP error! status: ${assignmentsResponse.status}`);
         }
-        
+
         const linkHeader = assignmentsResponse.headers.get('link');
         const newAssignments = await assignmentsResponse.json();
+        console.log(`Assignments fetched for course ${course.id}, page: ${page}:`, newAssignments.length);
         assignments.push(...newAssignments);
 
         const parsedLink = parseLinkHeader(linkHeader);
@@ -39,24 +68,64 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
         page++;
       }
 
-      // Fetch submission (grade) info for each assignment
+      console.log(`Total assignments fetched for course ${course.id}:`, assignments.length);
+
       const assignmentsWithGrades = await Promise.all(assignments.map(async (assignment) => {
+        console.log(`Fetching grade for ${assignment.name} ${assignment.id}`);
         const submissionResponse = await fetch(`${process.env.URL}/api/v1/courses/${course.id}/assignments/${assignment.id}/submissions/${process.env.CANVAS_ID}`, { headers });
         if (!submissionResponse.ok) {
+          console.error(`HTTP error fetching grade for assignment ${assignment.id}: status: ${submissionResponse.status}`);
           throw new Error(`HTTP error! status: ${submissionResponse.status}`);
         }
         const submission = await submissionResponse.json();
-        return { ...assignment, grade: submission.grade, score: submission.score };
+        return { ...assignment, missing: submission.missing, grade: submission.grade, score: submission.score };
       }));
 
-      return { ...course, assignments: assignmentsWithGrades };
+      console.log(`Assignments with grades processed for course ${course.id}`);
+
+      return {
+        course_code: course.course_code,
+        created_at: course.created_at,
+        enrollments: course.enrollments,
+        grade_passback_setting: course.grade_passback_setting,
+        id: course.id,
+        name: course.name, // Uncommented name for logging
+        uuid: course.uuid,
+        time_zone: course.time_zone,
+        enrollment_term_id: course.enrollment_term_id,
+        assignments: assignmentsWithGrades
+      };
     }));
+
+    console.log("Completed processing all courses.");
 
     return coursesWithAssignmentsAndGrades;
   } catch (error) {
     console.error("Error fetching courses, assignments, or grades:", error);
     throw error;
   }
+}
+
+// Ensure you have a function `parseLinkHeader(linkHeader)` defined to parse the Link header
+
+// function `parseLinkHeader(linkHeader)` defined to parse the Link header
+function extractTotalPages(linkHeader) {
+  // Splitting the Link header into its constituent parts
+  const links = linkHeader.split(',');
+  let lastPageNumber = 1; // Default to 1 in case the 'last' rel type is not found
+
+  // Iterate through each link segment to find the 'last' page link
+  links.forEach(link => {
+    if (link.includes('rel="last"')) {
+      // Extract the page number from the 'last' segment
+      const match = link.match(/page=(\d+)/);
+      if (match && match[1]) {
+        lastPageNumber = parseInt(match[1], 10);
+      }
+    }
+  });
+
+  return lastPageNumber;
 }
 
 function parseLinkHeader(header) {
