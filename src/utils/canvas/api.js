@@ -16,11 +16,11 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
     const linkHeader = initialCoursesResponse.headers.get('link');
     const courses = await initialCoursesResponse.json();
 
-    console.log("Initial courses fetched:", courses.length);
+    // console.log("Initial courses fetched:", courses.length);
 
     const totalPages = extractTotalPages(linkHeader);
 
-    console.log("Total pages of courses:", totalPages);
+    // console.log("Total pages of courses:", totalPages);
 
     for (let page = 2; page <= totalPages; page++) {
       console.log(`Fetching courses page: ${page}`);
@@ -38,10 +38,7 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
     const currentDate = new Date();
     const currentCourses = courses.filter(course => new Date(course.start_at) <= currentDate);
 
-    console.log("*********************************");
-    console.log("Courses", currentCourses)
 
-    console.log("Filtered current courses:", currentCourses.length);
 
     const coursesWithAssignmentsAndGrades = await Promise.all(currentCourses.map(async (course) => {
       console.log(`Processing course: ${course.name}`);
@@ -51,7 +48,7 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
       let hasMorePages = true;
 
       while (hasMorePages) {
-        console.log(`Fetching assignments for course ${course.id}, page: ${page}`);
+        // console.log(`Fetching assignments for course ${course.name}, page:`, page);
         const assignmentsResponse = await fetch(`${process.env.URL}/api/v1/courses/${course.id}/assignments?per_page=10&page=${page}`, { headers });
         if (!assignmentsResponse.ok) {
           console.error(`assignment search HTTP error! status: ${assignmentsResponse.status}, course ID: ${course.id}`);
@@ -60,28 +57,33 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
 
         const linkHeader = assignmentsResponse.headers.get('link');
         const newAssignments = await assignmentsResponse.json();
-        console.log(`Assignments fetched for course ${course.id}, page: ${page}:`, newAssignments.length);
+        // console.log(`Assignments fetched for course ${course.name}, page: ${page}:`, newAssignments.length);
         assignments.push(...newAssignments);
 
         const parsedLink = parseLinkHeader(linkHeader);
         hasMorePages = !!parsedLink.next;
+        // console.log(course.name, "pages so far", page);
+
         page++;
       }
 
-      console.log(`Total assignments fetched for course ${course.id}:`, assignments.length);
+      console.log(`Total assignments fetched for course ${course.name}:`, assignments.length);
 
       const assignmentsWithGrades = await Promise.all(assignments.map(async (assignment) => {
         console.log(`Fetching grade for ${assignment.name} ${assignment.id}`);
         const submissionResponse = await fetch(`${process.env.URL}/api/v1/courses/${course.id}/assignments/${assignment.id}/submissions/${process.env.CANVAS_ID}`, { headers });
         if (!submissionResponse.ok) {
-          console.error(`HTTP error fetching grade for assignment ${assignment.id}: status: ${submissionResponse.status}`);
-          throw new Error(`HTTP error! status: ${submissionResponse.status}`);
+          console.error(`Course: ${course.id} HTTP error fetching grade for ${assignment.name} ${assignment.id}: status: ${submissionResponse.status}`);
+          // throw new Error(`HTTP error! status: ${submissionResponse.status}`);
+          return { ...assignment, missing: true, grade: null, score: null };
         }
         const submission = await submissionResponse.json();
         return { ...assignment, missing: submission.missing, grade: submission.grade, score: submission.score };
       }));
 
-      console.log(`Assignments with grades processed for course ${course.id}`);
+
+    // const assignmentsWithGrades = assignments
+      console.log(`Assignments with grades processed for course ${course.name}`);
 
       return {
         course_code: course.course_code,

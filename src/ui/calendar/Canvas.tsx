@@ -9,6 +9,7 @@ export default function TodoList() {
 
   useEffect(() => {
     if (data) {
+      // console.log(data);
       let processingData = data.slice(); // Create a shallow copy of the data array
 
       for (const course of data) {
