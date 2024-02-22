@@ -1,52 +1,34 @@
 "use client";
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { trpc } from "@/app/_trpc/client";
 
 export default function TodoList() {
-  const [courses, setCourses] = useState<any[]>([]);
+  const [visibleAssignments, setVisibleAssignments] = useState<any[]>([]);
+  const [displayCount, setDisplayCount] = useState(15);
 
   const { data, isLoading, isError, error } =
     trpc.powerschool.assignments.useQuery({});
 
-    useEffect(() => {
-      if (data) {
-        let processingData = data.slice(); // Create a shallow copy of the data array
-    
-        for (const course of data) {
-          if (!course.assignments || course.assignments.length === 0) {
-            // Remove courses without assignments
-            console.log("Removing course", course);
-            processingData = processingData.filter((c) => c.id !== course.id);
-          } else {
-            for (const assignment of course.assignments) {
-              let dueDate = assignment.due_at ? new Date(assignment.due_at) : null;
-              let sixMonthsBeforeToday = new Date();
-              sixMonthsBeforeToday.setMonth(sixMonthsBeforeToday.getMonth() - 6);
-    
-              if (!dueDate || dueDate < sixMonthsBeforeToday) {
-                // If assignment doesn't meet the criteria, remove it from the course
-                processingData = processingData.map((c) => {
-                  if (c.id === course.id) {
-                    return {
-                      ...c,
-                      assignments: c.assignments.filter((a) => a.id !== assignment.id),
-                    };
-                  }
-                  return c;
-                });
-              }
-            }
-          }
-        }
-    
-        // Additional check: Remove courses that now have no assignments
-        processingData = processingData.filter((course) => course.assignments && course.assignments.length > 0);
-    
-        console.log(processingData);
-        setCourses(processingData as any);
-      }
-    }, [data]); // Dependency array
-    
+  useEffect(() => {
+    if (data) {
+      // Flatten, sort assignments, and initially display only the first 15
+      const sortedAssignments = data
+        .flatMap((course) =>
+          course.assignments.map((assignment) => ({
+            ...assignment,
+            courseName: course.name,
+            dueAtFormatted: new Date(assignment.due_at).toLocaleDateString(),
+          }))
+        )
+        .sort((a, b) => new Date(a.due_at) - new Date(b.due_at));
+
+      setVisibleAssignments(sortedAssignments.slice(0, displayCount));
+    }
+  }, [data, displayCount]);
+
+  const showMoreAssignments = () => {
+    setDisplayCount((prevCount) => prevCount + 15);
+  };
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -62,21 +44,39 @@ export default function TodoList() {
 
   return (
     <div>
-      {console.log(courses)}
-      {courses.map((course) => (
-        <div key={course.id}>
-          <h1>{course.name}</h1>
-          <ul>
-            {course.assignments &&
-              course.assignments.map((assignment) => (
-                <li key={assignment.id}>
-                  <h2>{assignment.name}</h2>
-                  <p>{assignment.due_at}</p>
-                </li>
-              ))}
-          </ul>
-        </div>
-      ))}
+      <p
+        style={{
+          fontSize: "1.5rem",
+          margin: "10px",
+          position: "sticky",
+          top: "0",
+        }}
+      >
+        Canvas Assignments
+      </p>
+
+      <div style={{ marginTop: "20px" }}>
+        {visibleAssignments.map((assignment, index) => (
+          <div
+            key={index}
+            style={{
+              border: "1px solid black",
+              margin: "10px",
+              padding: "10px",
+              borderRadius: "5px",
+            }}
+          >
+            <h2>{assignment.name}</h2>
+            <p>Due: {assignment.dueAtFormatted}</p>
+            <p>Points: {assignment.points_possible}</p>
+            <p>Course: {assignment.courseName}</p>
+          </div>
+        ))}
+        {visibleAssignments.length <
+          data.flatMap((course) => course.assignments).length && (
+          <button onClick={showMoreAssignments}>Show More</button>
+        )}
+      </div>
     </div>
   );
 }

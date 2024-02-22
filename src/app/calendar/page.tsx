@@ -6,7 +6,8 @@ import Calendar from "../../ui/calendar/Calendar";
 const Page: React.FC = () => {
   return (
     <div className="flex h-full">
-      <div className="flex-1 p-4 overflow-auto">
+      <div className="flex-1 p-4 border-r overflow-auto">
+
         <Canvas />
       </div>
       <div className="flex-1 p-4 border-r overflow-auto">
