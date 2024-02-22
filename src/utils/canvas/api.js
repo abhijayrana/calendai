@@ -7,7 +7,7 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
       Authorization: `Bearer ${token}`,
     };
 
-    console.log("Fetching initial courses...");
+    // console.log("Fetching initial courses...");
 
     const initialCoursesResponse = await fetch(`${process.env.URL}/api/v1/courses?enrollment_state=active&per_page=10&page=1`, { headers });
     if (!initialCoursesResponse.ok) {
@@ -33,7 +33,7 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
       courses.push(...additionalCourses);
     }
 
-    console.log("All courses fetched. Total courses:", courses.length);
+    // console.log("All courses fetched. Total courses:", courses.length);
 
     const currentDate = new Date();
     const currentCourses = courses.filter(course => new Date(course.start_at) <= currentDate);
@@ -41,7 +41,7 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
 
 
     const coursesWithAssignmentsAndGrades = await Promise.all(currentCourses.map(async (course) => {
-      console.log(`Processing course: ${course.name}`);
+      // console.log(`Processing course: ${course.name}`);
 
       let assignments = [];
       let page = 1;
@@ -67,10 +67,10 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
         page++;
       }
 
-      console.log(`Total assignments fetched for course ${course.name}:`, assignments.length);
+      // console.log(`Total assignments fetched for course ${course.name}:`, assignments.length);
 
       const assignmentsWithGrades = await Promise.all(assignments.map(async (assignment) => {
-        console.log(`Fetching grade for ${assignment.name} ${assignment.id}`);
+        // console.log(`Fetching grade for ${assignment.name} ${assignment.id}`);
         const submissionResponse = await fetch(`${process.env.URL}/api/v1/courses/${course.id}/assignments/${assignment.id}/submissions/${process.env.CANVAS_ID}`, { headers });
         if (!submissionResponse.ok) {
           console.error(`Course: ${course.id} HTTP error fetching grade for ${assignment.name} ${assignment.id}: status: ${submissionResponse.status}`);
@@ -83,7 +83,7 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
 
 
     // const assignmentsWithGrades = assignments
-      console.log(`Assignments with grades processed for course ${course.name}`);
+      // console.log(`Assignments with grades processed for course ${course.name}`);
 
       return {
         course_code: course.course_code,
@@ -99,7 +99,7 @@ export async function fetchCoursesAssignmentsWithGrades(token) {
       };
     }));
 
-    console.log("Completed processing all courses.");
+    // console.log("Completed processing all courses.");
 
     return coursesWithAssignmentsAndGrades;
   } catch (error) {
@@ -177,7 +177,7 @@ export async function fetchAssignmentsFromCourse( token) {
       return acc;
     }, {});
 
-    console.log(parsedLink);
+    // console.log(parsedLink);
     if (!parsedLink.last) {
       const assignments = {
         assignments: res,
