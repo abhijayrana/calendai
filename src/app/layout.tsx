@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/general/Navbar";
+import { ClerkProvider } from "@clerk/nextjs";
+import Provider from "./_trpc/Provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,13 +18,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
+    <ClerkProvider>
     <html lang="en">
+      <Provider>
       <body className={`${inter.className} antialiased`}>
         <Navbar />
         <div className="h-screen w-full grow p-6 md:overflow-y-auto md:p-12">
           {children}
         </div>
       </body>
+      </Provider>
     </html>
+    </ClerkProvider>
   );
 }
