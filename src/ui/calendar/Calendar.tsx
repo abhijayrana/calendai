@@ -27,6 +27,7 @@ function List() {
       >
         Grades in Powerschool
       </p>
+      {/* @ts-ignore */}
       {data.new_grades["23-24"]["S2"].map((course: any, index: number) => (
         <div
           key={index}

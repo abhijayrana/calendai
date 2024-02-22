@@ -13,14 +13,14 @@ export default function TodoList() {
     if (data) {
       // Flatten, sort assignments, and initially display only the first 15
       const sortedAssignments = data
-        .flatMap((course) =>
-          course.assignments.map((assignment) => ({
+        .flatMap((course:any) =>
+          course.assignments.map((assignment:any) => ({
             ...assignment,
             courseName: course.name,
             dueAtFormatted: new Date(assignment.due_at).toLocaleDateString(),
           }))
         )
-        .sort((a, b) => new Date(a.due_at) - new Date(b.due_at));
+        .sort((a:any, b:any) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime());
 
       setVisibleAssignments(sortedAssignments.slice(0, displayCount));
     }
@@ -73,7 +73,7 @@ export default function TodoList() {
           </div>
         ))}
         {visibleAssignments.length <
-          data.flatMap((course) => course.assignments).length && (
+          data.flatMap((course:any) => course.assignments).length && (
           <button onClick={showMoreAssignments}>Show More</button>
         )}
       </div>

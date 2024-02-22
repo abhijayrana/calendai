@@ -1,6 +1,6 @@
 
 "use client";
-import { useState } from "react";
+import { CSSProperties, useState } from "react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 
@@ -10,7 +10,7 @@ export default function SignInForm() {
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e:any) => {
     e.preventDefault();
     if (!isLoaded) {
       return;
@@ -35,7 +35,7 @@ export default function SignInForm() {
   };
 
   // Inline styles for components
-  const styles = {
+  const styles: {main: CSSProperties, formContainer: CSSProperties, input: CSSProperties, label: CSSProperties, button: CSSProperties} = {
     main: {
       display: 'flex',
       flexDirection: 'column',
