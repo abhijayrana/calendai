@@ -7,7 +7,7 @@ export default function TodoList() {
   const [displayCount, setDisplayCount] = useState(15);
 
   const { data, isLoading, isError, error } =
-    trpc.powerschool.assignments.useQuery({});
+    trpc.assignmentsAndGrades.assignments.useQuery({});
 
   useEffect(() => {
     if (data) {

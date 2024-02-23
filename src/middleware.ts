@@ -8,8 +8,18 @@ export default authMiddleware({
         "/(.*)",
         "/login",
         "/signup",
-        "/api/trpc/addUserToDatabase",
     ],
+    debug: true,
+    // afterAuth(auth, req, evt) {
+    //   if(!auth.userId && !auth.isPublicRoute) {
+    //     return {
+    //       redirect: {
+    //         destination: '/login',
+    //         permanent: false,
+    //       },
+    //     };
+    //   }
+    // }
 });
  
 export const config = {

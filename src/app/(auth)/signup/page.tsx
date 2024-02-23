@@ -14,12 +14,19 @@ export default function SignUpForm() {
   const router = useRouter();
 //   const dbResponse = trpc.addUserToDatabase.useMutation()
 
+const addToDb = trpc.user.signup.useMutation()
+
+
+
   // start the sign up process.
   const handleSubmit = async (e: any) => {
     e.preventDefault();
+
+
     if (!isLoaded) {
       return;
     }
+
  
     try {
       await signUp
@@ -32,11 +39,19 @@ export default function SignUpForm() {
             if (result.status === "complete") {
             console.log(result);
             setActive({ session: result.createdSessionId });
+            addToDb.mutate({emailAddress: result.emailAddress!, username: result.username!, clerkID: result.id!})
+
             // dbResponse.mutate({uid: result.createdUserId!.toString()})
             } else {
+                console.log(emailAddress, username, password)
             console.log(result);
             }
         })
+        .catch((err) => {
+            console.error("error", err.errors[0].longMessage);
+        });
+
+
       router.push("/");
       // send the email.
     //   await signUp.prepareEmailAddressVerification({ strategy: "email_code" });

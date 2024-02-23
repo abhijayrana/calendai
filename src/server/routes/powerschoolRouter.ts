@@ -13,7 +13,7 @@ const processData = (data: any) => {
   return data;
 };
 
-export const powerSchoolRouter = router({
+export const assignmentsAndGradesRouter = router({
   getStudentInfo: procedure.query(async (opts) => {
     try {
       // Create a promise wrapper for loginAndScrapeGrades

@@ -1,11 +1,13 @@
 import { publicProcedure as procedure, router } from "./trpc";
-import { powerSchoolRouter } from "./routes/powerschoolRouter";
+import { assignmentsAndGradesRouter } from "./routes/powerschoolRouter";
+import { userRouter } from "./routes/userRouter";
 require('dotenv').config();
 
 
 export const appRouter = router({
+  user: userRouter,
+  assignmentsAndGrades: assignmentsAndGradesRouter,
 
-  powerschool: powerSchoolRouter,
 });
 
 export type AppRouter = typeof appRouter;

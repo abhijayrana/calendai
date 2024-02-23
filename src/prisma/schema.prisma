@@ -1,0 +1,63 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+  id       String    @id @default(cuid())
+  email    String    @unique
+  username String    @unique
+  clerkAuthId String @unique
+  LMS     String?
+  GMS     String?
+  preferences Json?  @default("{\"theme\":\"dark\", \"tier\":\"basic\"}")
+  courses  Course[]
+  todos    Todo[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Course {
+  id          String      @id @default(cuid())
+  title       String
+  canvasCourseId String   @unique
+  assignments Assignment[]
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+}
+
+model Assignment {
+  id            String   @id @default(cuid())
+  title         String
+  description   String?
+  dueDate       DateTime
+  priority      Int      @default(0)
+  completed     Boolean  @default(false)
+  courseId      String
+  course        Course   @relation(fields: [courseId], references: [id])
+  userEdits     UserEdit[]
+}
+
+model UserEdit {
+  id            String    @id @default(cuid())
+  assignmentId  String
+  assignment    Assignment @relation(fields: [assignmentId], references: [id])
+  priority      Int       @default(0)
+  dueDate       DateTime?
+  completed     Boolean?
+  createdAt     DateTime  @default(now())
+}
+
+model Todo {
+  id        String   @id @default(cuid())
+  title     String
+  dueDate   DateTime?
+  completed Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+}
