@@ -163,10 +163,10 @@ export const assignmentsAndGradesRouter = router({
       }
 
       if (errors.length > 0) {
-        return {
+        return [{
           success: false,
-          errors: errors,
-        };
+          errors: errors, // Keeping the structure, but as the first item in an array
+        }];
       }
 
       const user = await prisma.user.findUnique({

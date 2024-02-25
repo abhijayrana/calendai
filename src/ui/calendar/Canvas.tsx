@@ -28,7 +28,7 @@ export default function TodoList() {
       //@ts-ignore
       if (userInfoData && typeof userInfoData.lmsconfig[0]?.syncs === 'number') {
         //@ts-ignore
-        if (userInfoData.lmsconfig[0].syncs === 0) {
+        if (userInfoData.lmsconfig[0].syncs > 0) {
           console.log("Syncs is 0, calling initialAssignmentsSyncWithDb");
           refetch(); // Call the initialAssignmentsSyncWithDb if syncs == 0
         } 
@@ -50,7 +50,7 @@ export default function TodoList() {
       console.log(data);
 
       const sortedAssignments = data
-        //@ts-ignore
+
         .flatMap((course: any) =>
           course.assignments.map((assignment: any) => ({
             ...assignment,
