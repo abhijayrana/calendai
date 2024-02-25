@@ -19,9 +19,7 @@ const Page: React.FC = () => {
       { enabled: !!user && isLoaded } // The query runs only if user is defined and isLoaded is true
     );
 
-    if (!isLoaded) {
-      return <p>Loading...</p>;
-    }
+
   
     useEffect(() => {
       if (!isLoaded) return; // Exit early if the user state isn't loaded yet
@@ -31,6 +29,10 @@ const Page: React.FC = () => {
     }, [isLoaded, user, router]); // Depend on isLoaded and user state
 
 
+    if (!isLoaded) {
+      return <p>Loading...</p>;
+    }
+    
 
 
   if(isLoading) {
