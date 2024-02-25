@@ -57,8 +57,8 @@ export const userRouter = router({
       if (!user) {
         throw new Error("User not found");
       }
-      console.log(user.LMS, user.GMS);
-      return { lms: user.LMS, gms: user.GMS };
+      console.log(user.LMS);
+      return { lms: user.LMS };
     }),
   addLMStoUser: procedure
     .input(
