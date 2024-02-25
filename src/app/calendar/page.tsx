@@ -7,7 +7,7 @@ import SetupLMS from "@/ui/lms-gms/SetUpLMS";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs"; // Assuming 'currentUser' was not used
 import { useRouter } from "next/navigation";
-
+import { useEffect } from "react";
 const Page: React.FC = () => {
   const { isLoaded, user } = useUser();
 
@@ -23,11 +23,12 @@ const Page: React.FC = () => {
       return <p>Loading...</p>;
     }
   
-
-  if (!user) {
-    router.push("/login");
-  }
-
+    useEffect(() => {
+      if (!isLoaded) return; // Exit early if the user state isn't loaded yet
+      if (!user) {
+        router.push("/login");
+      }
+    }, [isLoaded, user, router]); // Depend on isLoaded and user state
 
 
 
