@@ -12,19 +12,23 @@ const Page: React.FC = () => {
   const { isLoaded, user } = useUser();
 
   const router = useRouter();
-  if (!isLoaded) {
-    return <p>Loading...</p>;
-  }
+
+    // Conditional query execution based on `isLoaded` and if `user` exists
+    const {isLoading, isError, data} = trpc.user.isUserSetupWithLMSandGMS.useQuery(
+      { emailAddress: user?.primaryEmailAddress?.toString()! },
+      { enabled: !!user && isLoaded } // The query runs only if user is defined and isLoaded is true
+    );
+
+    if (!isLoaded) {
+      return <p>Loading...</p>;
+    }
+  
 
   if (!user) {
     router.push("/login");
   }
 
-  // Conditional query execution based on `isLoaded` and if `user` exists
-  const {isLoading, isError, data} = trpc.user.isUserSetupWithLMSandGMS.useQuery(
-    { emailAddress: user?.primaryEmailAddress?.toString()! },
-    { enabled: !!user && isLoaded } // The query runs only if user is defined and isLoaded is true
-  );
+
 
 
 

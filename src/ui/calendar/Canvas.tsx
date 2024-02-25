@@ -6,13 +6,47 @@ import { useUser } from "@clerk/nextjs";
 export default function TodoList() {
   const [visibleAssignments, setVisibleAssignments] = useState<any[]>([]);
   const [displayCount, setDisplayCount] = useState(15);
+  const [isEstablished, setIsEstablished] = useState(false);
 
   const { isLoaded, user } = useUser();
 
-  const { data, isLoading, isError, error } =
+  if(!isLoaded) {
+    return <p>Loading...</p>
+
+  }
+
+  const {data: userInfoData, isLoading: userInfoIsLoading, isError: userInfoIsError, error: userInfoError} = trpc.user.userInfo.useQuery({
+    id: user?.id!.toString()!
+  });
+
+  const { data, isLoading, isError, error, refetch } =
     trpc.assignmentsAndGrades.initialAssignmentsSyncWithDb.useQuery({
       id: user!.id,
-    });
+    }, {enabled: false});
+
+  
+    useEffect(() => {
+
+      // Ensure userInfoData and its properties are loaded and defined before accessing syncs
+      //@ts-ignore
+      if (userInfoData && typeof userInfoData.lmsconfig[0]?.syncs === 'number') {
+        //@ts-ignore
+        if (userInfoData.lmsconfig[0].syncs === 0) {
+          console.log("Syncs is 0, calling initialAssignmentsSyncWithDb");
+          refetch(); // Call the initialAssignmentsSyncWithDb if syncs == 0
+        } 
+        //@ts-ignore
+        else if (userInfoData.lmsconfig[0].syncs > 0) {
+          // Perform some other action if syncs > 0
+          setIsEstablished(true);
+          console.log("Performing an alternative action because syncs > 0");
+          // Placeholder for other logic
+        }
+      }
+      //@ts-ignore
+    }, [userInfoData, refetch]); // Add userInfoData to the dependency array
+
+    
 
   useEffect(() => {
     if (data) {

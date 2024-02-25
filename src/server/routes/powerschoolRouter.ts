@@ -169,6 +169,30 @@ export const assignmentsAndGradesRouter = router({
         };
       }
 
+      const user = await prisma.user.findUnique({
+        where: { clerkAuthId: input.id },
+      });
+      
+      //@ts-ignore
+      if (!user || !user.lmsconfig || user.lmsconfig.length === 0) {
+        throw new Error("User not found or `lmsconfig` is empty");
+      }
+      
+      //@ts-ignore
+      let lmsconfig = [...user.lmsconfig]; // Create a shallow copy of the lmsconfig array
+      if (lmsconfig[0].syncs !== undefined) {
+        lmsconfig[0].syncs += 1; // Increment syncs
+      } else {
+        throw new Error("`syncs` field not found in the first `lmsconfig` object");
+      }
+      
+      await prisma.user.update({
+        where: { clerkAuthId: input.id },
+        data: {
+          lmsconfig: lmsconfig, // Update with the modified array
+        },
+      });
+
       return assignmentsResults.flat();
     } catch (error) {
       console.error("Error fetching assignments:", error);
