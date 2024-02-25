@@ -4,11 +4,13 @@ import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-export default function SignInForm({ redirectTo = "/calendar" }) {
+export default function SignInForm() {
   const { isLoaded, signIn, setActive } = useSignIn();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+
+  const redirectTo = "/calendar";
 
   const handleSubmit = async (e: any) => {
     e.preventDefault();

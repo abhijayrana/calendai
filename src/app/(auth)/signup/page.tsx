@@ -4,7 +4,7 @@ import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { trpc } from "@/app/_trpc/client";
 
-export default function SignUpForm({ redirectTo = "/calendar" }) {
+export default function SignUpForm() {
   const { isLoaded, signUp, setActive } = useSignUp();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
@@ -14,6 +14,8 @@ export default function SignUpForm({ redirectTo = "/calendar" }) {
   const router = useRouter();
   //   const dbResponse = trpc.addUserToDatabase.useMutation()
 
+  const redirectTo = "/calendar";
+  
   const addToDb = trpc.user.signup.useMutation();
 
   // start the sign up process.
@@ -52,7 +54,7 @@ export default function SignUpForm({ redirectTo = "/calendar" }) {
         });
 
       router.push(redirectTo);
-      
+
       // send the email.
       //   await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
