@@ -10,10 +10,7 @@ export default function TodoList() {
 
   const { isLoaded, user } = useUser();
 
-  if(!isLoaded) {
-    return <p>Loading...</p>
 
-  }
 
   const {data: userInfoData, isLoading: userInfoIsLoading, isError: userInfoIsError, error: userInfoError} = trpc.user.userInfo.useQuery({
     id: user?.id!.toString()!
@@ -69,6 +66,11 @@ export default function TodoList() {
       setVisibleAssignments(sortedAssignments.slice(0, displayCount));
     }
   }, [data, displayCount]);
+
+  if(!isLoaded) {
+    return <p>Loading...</p>
+
+  }
 
   const showMoreAssignments = () => {
     setDisplayCount((prevCount) => prevCount + 15);

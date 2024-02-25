@@ -115,7 +115,7 @@ export default function SignInForm({ redirectTo = "/calendar" }) {
             Sign In
           </button>
         </form>
-        Don't have an account? <Link href={"/signup"}>Sign up</Link>
+        Don&apos;t have an account? <Link href={"/signup"}>Sign up</Link>
       </div>
     </main>
   );
