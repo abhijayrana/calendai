@@ -27,6 +27,7 @@ export default function TodoList() {
       // Ensure userInfoData and its properties are loaded and defined before accessing syncs
       //@ts-ignore
       if (userInfoData && typeof userInfoData.lmsconfig[0]?.syncs === 'number') {
+        console.log(userInfoData);
         //@ts-ignore
         if (userInfoData.lmsconfig[0].syncs > 0) {
           console.log("Syncs is 0, calling initialAssignmentsSyncWithDb");
