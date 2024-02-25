@@ -3,61 +3,76 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("POSTGRES_PRISMA_URL")
+  provider  = "postgresql"
+  url       = env("POSTGRES_PRISMA_URL")
   directUrl = env("POSTGRES_URL_NON_POOLING")
 }
 
 model User {
-  id       String    @id @default(cuid())
-  email    String    @unique
-  username String    @unique
-  clerkAuthId String @unique
-  LMS     String?
-  GMS     String?
-  preferences Json?  @default("{\"theme\":\"dark\", \"tier\":\"basic\"}")
-  courses  Course[]
-  todos    Todo[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String       @id @default(cuid())
+  email       String       @unique
+  username    String       @unique
+  clerkAuthId String       @unique
+  LMS         String? 
+  lmsconfig   Json? // For storing LMS tokens, school IDs, etc., securely
+  preferences Json?        @default("{\"theme\":\"dark\", \"tier\":\"basic\"}")
+  enrollments Enrollment[]
+  todos       Todo[]
+  edits       Edit[] // This line represents the user's edits to assignments
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }
 
 model Course {
-  id          String      @id @default(cuid())
-  title       String
-  canvasCourseId String   @unique
-  assignments Assignment[]
-  userId      String
-  user        User        @relation(fields: [userId], references: [id])
+  id             String       @id @default(cuid())
+  title          String
+  canvasCourseId String       @unique
+  assignments    Assignment[]
+  enrollments    Enrollment[]
+}
+
+model Enrollment {
+  id       String @id @default(cuid())
+  userId   String
+  courseId String
+  user     User   @relation(fields: [userId], references: [id])
+  course   Course @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId], name: "userId_courseId") // Explicit naming (if you have this)
 }
 
 model Assignment {
-  id            String   @id @default(cuid())
-  title         String
-  description   String?
-  dueDate       DateTime
-  priority      Int      @default(0)
-  completed     Boolean  @default(false)
-  courseId      String
-  course        Course   @relation(fields: [courseId], references: [id])
-  userEdits     UserEdit[]
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime
+  priority    Int      @default(0)
+  courseId    String
+  score       Float?
+  grade       String?
+  status      String?  @default("unsubmitted")
+  isMissing   Boolean  @default(false)
+  course      Course   @relation(fields: [courseId], references: [id])
+  edits       Edit[] // Assuming edits are now directly linked to assignments
 }
 
-model UserEdit {
-  id            String    @id @default(cuid())
-  assignmentId  String
-  assignment    Assignment @relation(fields: [assignmentId], references: [id])
-  priority      Int       @default(0)
-  dueDate       DateTime?
-  completed     Boolean?
-  createdAt     DateTime  @default(now())
+model Edit {
+  id           String     @id @default(cuid())
+  assignmentId String
+  userId       String // Links edit to a specific user
+  priority     Int        @default(0)
+  dueDate      DateTime?
+  completed    Boolean?
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  user         User       @relation(fields: [userId], references: [id])
+  createdAt    DateTime   @default(now())
 }
 
 model Todo {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   title     String
   dueDate   DateTime?
-  completed Boolean  @default(false)
+  completed Boolean   @default(false)
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 }

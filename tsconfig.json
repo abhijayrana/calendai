@@ -24,6 +24,6 @@
       "@database/*": ["./src/utils/database/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/utils/powerschool/scrape.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/utils/powerschool/scrape.js", "middleware.ts"],
   "exclude": ["node_modules"]
 }

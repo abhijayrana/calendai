@@ -9,7 +9,6 @@ export default authMiddleware({
         "/login",
         "/signup",
     ],
-    debug: true,
     // afterAuth(auth, req, evt) {
     //   if(!auth.userId && !auth.isPublicRoute) {
     //     return {

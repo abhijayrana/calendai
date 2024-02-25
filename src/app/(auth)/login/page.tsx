@@ -1,16 +1,16 @@
-
 "use client";
 import { CSSProperties, useState } from "react";
 import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
-export default function SignInForm() {
+export default function SignInForm({ redirectTo = "/calendar" }) {
   const { isLoaded, signIn, setActive } = useSignIn();
   const [emailAddress, setEmailAddress] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  const handleSubmit = async (e:any) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
     if (!isLoaded) {
       return;
@@ -25,56 +25,62 @@ export default function SignInForm() {
       if (result.status === "complete") {
         console.log(result);
         await setActive({ session: result.createdSessionId });
-        router.push("/");
+        router.push(redirectTo);
       } else {
         console.log(result);
       }
-    } catch (err:any) {
+    } catch (err: any) {
       console.error("error", err.errors[0].longMessage);
     }
   };
 
   // Inline styles for components
-  const styles: {main: CSSProperties, formContainer: CSSProperties, input: CSSProperties, label: CSSProperties, button: CSSProperties} = {
+  const styles: {
+    main: CSSProperties;
+    formContainer: CSSProperties;
+    input: CSSProperties;
+    label: CSSProperties;
+    button: CSSProperties;
+  } = {
     main: {
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: '100%',
-      background: '#f0f2f5',
-      color: '#333',
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center",
+      alignItems: "center",
+      minHeight: "100%",
+      background: "#f0f2f5",
+      color: "#333",
     },
     formContainer: {
-      background: '#fff',
-      padding: '40px',
-      borderRadius: '8px',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-      width: '100%',
-      maxWidth: '400px',
+      background: "#fff",
+      padding: "40px",
+      borderRadius: "8px",
+      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
+      width: "100%",
+      maxWidth: "400px",
     },
     input: {
-      width: '100%',
-      padding: '10px',
-      margin: '10px 0',
-      borderRadius: '5px',
-      border: '1px solid #ccc',
-      boxSizing: 'border-box', // Fixes padding and border issue
+      width: "100%",
+      padding: "10px",
+      margin: "10px 0",
+      borderRadius: "5px",
+      border: "1px solid #ccc",
+      boxSizing: "border-box", // Fixes padding and border issue
     },
     label: {
-      display: 'block',
-      marginBottom: '5px',
+      display: "block",
+      marginBottom: "5px",
     },
     button: {
-      width: '100%',
-      padding: '10px',
-      margin: '20px 0',
-      borderRadius: '5px',
-      border: 'none',
-      color: '#fff',
-      background: '#007bff',
-      cursor: 'pointer',
-    }
+      width: "100%",
+      padding: "10px",
+      margin: "20px 0",
+      borderRadius: "5px",
+      border: "none",
+      color: "#fff",
+      background: "#007bff",
+      cursor: "pointer",
+    },
   };
 
   return (
@@ -82,7 +88,9 @@ export default function SignInForm() {
       <div style={styles.formContainer}>
         <form>
           <div>
-            <label htmlFor="email" style={styles.label}>Email or Username</label>
+            <label htmlFor="email" style={styles.label}>
+              Email or Username
+            </label>
             <input
               style={styles.input}
               onChange={(e) => setEmailAddress(e.target.value)}
@@ -92,7 +100,9 @@ export default function SignInForm() {
             />
           </div>
           <div>
-            <label htmlFor="password" style={styles.label}>Password</label>
+            <label htmlFor="password" style={styles.label}>
+              Password
+            </label>
             <input
               style={styles.input}
               onChange={(e) => setPassword(e.target.value)}
@@ -101,8 +111,11 @@ export default function SignInForm() {
               type="password"
             />
           </div>
-          <button type="submit" onClick={handleSubmit} style={styles.button}>Sign In</button>
+          <button type="submit" onClick={handleSubmit} style={styles.button}>
+            Sign In
+          </button>
         </form>
+        Don't have an account? <Link href={"/signup"}>Sign up</Link>
       </div>
     </main>
   );
