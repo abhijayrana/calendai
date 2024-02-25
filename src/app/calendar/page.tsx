@@ -39,7 +39,7 @@ const Page: React.FC = () => {
   // Checking if the LMS setup query was successful or exists
   // Assuming the query returns a boolean or something that evaluates to true/false
   const isLmsSetup = !!data?.lms; 
-  const isGmsSetup = !!data?.gms;
+
 
   return (
     <div className="flex h-full">
