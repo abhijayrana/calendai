@@ -54,6 +54,7 @@ export async function addOrUpdateCourseWithAssignments(data) {
                 grade: assignment.grade,
                 status: assignment.status,
                 isMissing: assignment.isMissing,
+                pointsPossible: assignment.points_possible,
             },
             create: {
                 id: assignment.id,
@@ -65,6 +66,7 @@ export async function addOrUpdateCourseWithAssignments(data) {
                 score: assignment.score,
                 grade: assignment.grade,
                 status: assignment.status,
+                pointsPossible: assignment.points_possible,
                 isMissing: assignment.isMissing,
               },
             
@@ -73,5 +75,41 @@ export async function addOrUpdateCourseWithAssignments(data) {
 
     return "done";
 
+
+}
+
+
+export async function fetchAssignmentsAndCourses() {
+    const {userId} = auth();
+
+    try {
+        const userWithCoursesAndAssignments = await prisma.user.findUnique({
+          where: {
+            clerkAuthId: userId,
+          },
+          include: {
+            enrollments: {
+              include: {
+                course: {
+                  include: {
+                    assignments: true, // Include assignments for each course
+                  },
+                },
+              },
+            },
+          },
+        });
+    
+        // Transform the data structure to an array of courses with assignments
+        const courses = userWithCoursesAndAssignments.enrollments.map(enrollment => ({
+          ...enrollment.course,
+          assignments: enrollment.course.assignments,
+        }));
+    
+        return courses;
+      } catch (error) {
+        console.error("Failed to fetch user courses and assignments:", error);
+        throw error; // Rethrow or handle as needed
+      }
 
 }

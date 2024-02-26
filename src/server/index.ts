@@ -1,5 +1,5 @@
 import { publicProcedure as procedure, router } from "./trpc";
-import { assignmentsAndGradesRouter } from "./routes/powerschoolRouter";
+import { assignmentsAndGradesRouter } from "./routes/assignmentsAndGradesRouter";
 import { userRouter } from "./routes/userRouter";
 require('dotenv').config();
 

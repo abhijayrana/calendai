@@ -7,44 +7,64 @@ export default function TodoList() {
   const [visibleAssignments, setVisibleAssignments] = useState<any[]>([]);
   const [displayCount, setDisplayCount] = useState(15);
   const [isEstablished, setIsEstablished] = useState(false);
+  const [hasRefetched, setHasRefetched] = useState(false);
+  const [hasRefetchedFromDb, setHasRefetchedFromDb] = useState(false);
+  const [forcedSync, setForcedSync] = useState(false);
+
+  const [actualData, setActualData] = useState<any[]>([]);
 
   const { isLoaded, user } = useUser();
 
-
-
-  const {data: userInfoData, isLoading: userInfoIsLoading, isError: userInfoIsError, error: userInfoError} = trpc.user.userInfo.useQuery({
-    id: user?.id!.toString()!
+  const {
+    data: userInfoData,
+    isLoading: userInfoIsLoading,
+    isError: userInfoIsError,
+    error: userInfoError,
+  } = trpc.user.userInfo.useQuery({
+    id: user?.id!.toString()!,
   });
 
   const { data, isLoading, isError, error, refetch } =
-    trpc.assignmentsAndGrades.initialAssignmentsSyncWithDb.useQuery({
-      id: user!.id,
-    }, {enabled: false});
+    trpc.assignmentsAndGrades.initialAssignmentsSyncWithDb.useQuery(
+      {
+        id: user!.id,
+      },
+      { enabled: false }
+    );
 
-  
-    useEffect(() => {
+  const {
+    data: fetchedFromDbData,
+    isLoading: fetchedFromDbIsLoading,
+    isError: fetchedFromDbIsError,
+    error: fetchedFromDbError,
+    refetch: refetchFromDB,
+  } = trpc.assignmentsAndGrades.fetchAssignmentsFromDb.useQuery(undefined, {
+    enabled: false,
+  });
 
-      // Ensure userInfoData and its properties are loaded and defined before accessing syncs
+  useEffect(() => {
+    // Ensure userInfoData and its properties are loaded and defined before accessing syncs
+    //@ts-ignore
+    if (userInfoData && typeof userInfoData.lmsconfig[0]?.syncs === "number") {
+      console.log(userInfoData);
       //@ts-ignore
-      if (userInfoData && typeof userInfoData.lmsconfig[0]?.syncs === 'number') {
-        console.log(userInfoData);
-        //@ts-ignore
-        if (userInfoData.lmsconfig[0].syncs > 0) {
-          console.log("Syncs is 0, calling initialAssignmentsSyncWithDb");
-          refetch(); // Call the initialAssignmentsSyncWithDb if syncs == 0
-        } 
-        //@ts-ignore
-        else if (userInfoData.lmsconfig[0].syncs > 0) {
-          // Perform some other action if syncs > 0
-          setIsEstablished(true);
-          console.log("Performing an alternative action because syncs > 0");
-          // Placeholder for other logic
-        }
+      if (userInfoData.lmsconfig[0].syncs == 0) {
+        console.log("Syncs is 0, calling initialAssignmentsSyncWithDb");
+        refetch(); // Call the initialAssignmentsSyncWithDb if syncs == 0
+        setHasRefetched(true);
       }
       //@ts-ignore
-    }, [userInfoData, refetch]); // Add userInfoData to the dependency array
-
-    
+      else if (userInfoData.lmsconfig[0].syncs > 0) {
+        // Perform some other action if syncs > 0
+        refetchFromDB();
+        setHasRefetchedFromDb(true);
+        setIsEstablished(true);
+        console.log("Performing an alternative action because syncs > 0");
+        // Placeholder for other logic
+      }
+    }
+    //@ts-ignore
+  }, [userInfoData, refetch]); // Add userInfoData to the dependency array
 
   useEffect(() => {
     if (data) {
@@ -68,17 +88,53 @@ export default function TodoList() {
     }
   }, [data, displayCount]);
 
-  if(!isLoaded) {
-    return <p>Loading...</p>
+  useEffect(() => {
+    if (fetchedFromDbData) {
+      console.log(fetchedFromDbData);
+      const sortedAssignments = fetchedFromDbData
 
+        .flatMap((course: any) =>
+          course.assignments.map((assignment: any) => ({
+            ...assignment,
+            courseName: course.title,
+            dueAtFormatted: new Date(assignment.dueDate).toLocaleDateString(),
+          }))
+        )
+        .sort(
+          (a: any, b: any) =>
+            new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
+        );
+
+      setVisibleAssignments(sortedAssignments.slice(0, displayCount));
+    }
+  }, [fetchedFromDbData, displayCount]);
+
+  if (!isLoaded) {
+    return <p>Loading...</p>;
   }
 
   const showMoreAssignments = () => {
     setDisplayCount((prevCount) => prevCount + 15);
   };
 
-  if (isLoading) {
-    return <div>Syncing Grades...</div>;
+  if (userInfoIsLoading) {
+    return <p>Loading IsUserSetup...</p>;
+  }
+
+  if (userInfoIsError) {
+    return <p>Error: {userInfoError.message}</p>;
+  }
+
+  if (isLoading && hasRefetched) {
+    return <div>Syncing Grades... </div>;
+  }
+
+  if (isLoading && forcedSync) {
+    return <div>Syncing from canvas...</div>;
+  }
+
+  if (fetchedFromDbIsLoading && hasRefetchedFromDb) {
+    return <p>Syncing from db...</p>;
   }
 
   if (isError) {
@@ -87,7 +143,10 @@ export default function TodoList() {
 
   //@ts-ignore
 
-  if (!data || data.length === 0) {
+  if (
+    (!data || data.length === 0) &&
+    (!fetchedFromDbData || fetchedFromDbData.length === 0)
+  ) {
     return <div>No data available</div>;
   }
 
@@ -105,6 +164,17 @@ export default function TodoList() {
       </p>
 
       <div style={{ marginTop: "20px" }}>
+        <button
+          onClick={() => {
+            refetch();
+
+            setForcedSync(true);
+          }}
+          style={{ display: isEstablished ? "block" : "none" }}
+        >
+          Sync
+        </button>
+
         {visibleAssignments.map((assignment, index) => (
           <div
             key={index}
@@ -153,7 +223,10 @@ export default function TodoList() {
         ))}
         {visibleAssignments.length <
           //@ts-ignore
-          data.flatMap((course: any) => course.assignments).length && (
+          (userInfoData?.lmsconfig?.[0]?.syncs === 0
+            ? data
+            : fetchedFromDbData
+          ).flatMap((course: any) => course.assignments).length && (
           <button onClick={showMoreAssignments}>Show More</button>
         )}
       </div>
