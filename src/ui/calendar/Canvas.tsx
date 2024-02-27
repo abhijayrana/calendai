@@ -7,11 +7,8 @@ export default function TodoList() {
   const [visibleAssignments, setVisibleAssignments] = useState<any[]>([]);
   const [displayCount, setDisplayCount] = useState(15);
   const [isEstablished, setIsEstablished] = useState(false);
-  const [hasRefetched, setHasRefetched] = useState(false);
-  const [hasRefetchedFromDb, setHasRefetchedFromDb] = useState(false);
   const [forcedSync, setForcedSync] = useState(false);
 
-  const [actualData, setActualData] = useState<any[]>([]);
 
   const { isLoaded, user } = useUser();
 
@@ -25,7 +22,7 @@ export default function TodoList() {
   });
 
   const { data, isLoading, isError, error, refetch } =
-    trpc.assignmentsAndGrades.initialAssignmentsSyncWithDb.useQuery(
+    trpc.assignmentsAndGrades.syncAssignments.useQuery(
       {
         id: user!.id,
       },
@@ -43,71 +40,48 @@ export default function TodoList() {
   });
 
   useEffect(() => {
-    // Ensure userInfoData and its properties are loaded and defined before accessing syncs
+
     //@ts-ignore
     if (userInfoData && typeof userInfoData.lmsconfig[0]?.syncs === "number") {
-      console.log(userInfoData);
+      //@ts-ignore
+      console.log(userInfoData.lmsconfig[0].syncs);
       //@ts-ignore
       if (userInfoData.lmsconfig[0].syncs == 0) {
         console.log("Syncs is 0, calling initialAssignmentsSyncWithDb");
         refetch(); // Call the initialAssignmentsSyncWithDb if syncs == 0
-        setHasRefetched(true);
       }
       //@ts-ignore
       else if (userInfoData.lmsconfig[0].syncs > 0) {
-        // Perform some other action if syncs > 0
-        refetchFromDB();
-        setHasRefetchedFromDb(true);
         setIsEstablished(true);
-        console.log("Performing an alternative action because syncs > 0");
-        // Placeholder for other logic
+        console.log("Syncs is greater than 0, calling fetchAssignmentsFromDb");
+        refetchFromDB(); // Call fetchAssignmentsFromDb if syncs > 0
       }
     }
     //@ts-ignore
   }, [userInfoData, refetch]); // Add userInfoData to the dependency array
 
   useEffect(() => {
-    if (data) {
-      console.log(data);
-
-      const sortedAssignments = data
-
+    let sourceData = isEstablished ? fetchedFromDbData : data;
+  
+    if (sourceData) {
+      console.log(sourceData);
+  
+      const sortedAssignments = sourceData
         .flatMap((course: any) =>
           course.assignments.map((assignment: any) => ({
             ...assignment,
-            courseName: course.name,
-            dueAtFormatted: new Date(assignment.due_at).toLocaleDateString(),
+            courseName: course.name || course.title, // Adjust based on your data structure
+            dueAtFormatted: new Date(assignment.due_at || assignment.dueDate).toLocaleDateString(),
           }))
         )
         .sort(
           (a: any, b: any) =>
-            new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
+            new Date(a.due_at || a.dueDate).getTime() - new Date(b.due_at || b.dueDate).getTime()
         );
-
+  
       setVisibleAssignments(sortedAssignments.slice(0, displayCount));
     }
-  }, [data, displayCount]);
-
-  useEffect(() => {
-    if (fetchedFromDbData) {
-      console.log(fetchedFromDbData);
-      const sortedAssignments = fetchedFromDbData
-
-        .flatMap((course: any) =>
-          course.assignments.map((assignment: any) => ({
-            ...assignment,
-            courseName: course.title,
-            dueAtFormatted: new Date(assignment.dueDate).toLocaleDateString(),
-          }))
-        )
-        .sort(
-          (a: any, b: any) =>
-            new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
-        );
-
-      setVisibleAssignments(sortedAssignments.slice(0, displayCount));
-    }
-  }, [fetchedFromDbData, displayCount]);
+  }, [data, fetchedFromDbData, displayCount, isEstablished]); // Add isEstablished to the dependency array
 
   if (!isLoaded) {
     return <p>Loading...</p>;
@@ -125,23 +99,22 @@ export default function TodoList() {
     return <p>Error: {userInfoError.message}</p>;
   }
 
-  if (isLoading && hasRefetched) {
+  if (isLoading && fetchedFromDbIsLoading) {
     return <div>Syncing Grades... </div>;
   }
 
-  if (isLoading && forcedSync) {
+  if (isLoading && !isEstablished) {
     return <div>Syncing from canvas...</div>;
-  }
-
-  if (fetchedFromDbIsLoading && hasRefetchedFromDb) {
-    return <p>Syncing from db...</p>;
   }
 
   if (isError) {
     return <div>Error: {error.message}</div>;
   }
 
-  //@ts-ignore
+  if (fetchedFromDbIsError) {
+    return <div>Error: {fetchedFromDbError.message}</div>;
+  }
+
 
   if (
     (!data || data.length === 0) &&
@@ -168,7 +141,7 @@ export default function TodoList() {
           onClick={() => {
             refetch();
 
-            setForcedSync(true);
+            setIsEstablished(false);
           }}
           style={{ display: isEstablished ? "block" : "none" }}
         >
@@ -187,35 +160,39 @@ export default function TodoList() {
           >
             {!assignment.isMissing && assignment.status == "unsubmitted" && (
               <>
-                <h2>{assignment.name} 1</h2>
+                <h2>{assignment.title}</h2>
+                <p>Unsubmitted</p>
                 <p>Due: {assignment.dueAtFormatted}</p>
-                <p>Points Possible: {assignment.points_possible}</p>
+                <p>Points Possible: {assignment.pointsPossible}</p>
                 <p>Course: {assignment.courseName}</p>
               </>
             )}
             {assignment.isMissing && (
               <>
-                <h2>[MISSING] {assignment.name} 2</h2>
+                <h2>{assignment.title} </h2>
+                <p>Missing</p>
                 <p>Due: {assignment.dueAtFormatted}</p>
-                <p>Points Possible: {assignment.points_possible}</p>
+                <p>Points Possible: {assignment.pointsPossible}</p>
                 <p>Course: {assignment.courseName}</p>
               </>
             )}
             {assignment.status == "submitted" && !assignment.score && (
               <>
-                <h2>{assignment.name} 3</h2>
+                <h2>{assignment.title}</h2>
+                <p>Submitted</p>
                 <p>Due: {assignment.dueAtFormatted}</p>
                 <p>Points: Not graded yet </p>
-                <p>Points Possible: {assignment.points_possible}</p>
+                <p>Points Possible: {assignment.pointsPossible}</p>
                 <p>Course: {assignment.courseName}</p>
               </>
             )}
             {assignment.status == "graded" && assignment.score && (
               <>
-                <h2>{assignment.name} 4</h2>
+                <h2>{assignment.title}</h2>
+                <p>Graded</p>
                 <p>Due: {assignment.dueAtFormatted}</p>
                 <p>Points: {assignment.score}</p>
-                <p>Points Possible: {assignment.points_possible}</p>
+                <p>Points Possible: {assignment.pointsPossible}</p>
                 <p>Course: {assignment.courseName}</p>
               </>
             )}

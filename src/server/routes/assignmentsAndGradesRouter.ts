@@ -95,7 +95,7 @@ export const assignmentsAndGradesRouter = router({
       }
     }),
 
-  initialAssignmentsSyncWithDb: procedure
+  syncAssignments: procedure
     .input(
       z.object({
         id: z.string(),
@@ -149,13 +149,14 @@ export const assignmentsAndGradesRouter = router({
             grade: assignment.grade || undefined,
             status: assignment.status || undefined,
             isMissing: assignment.isMissing || undefined,
+            points_possible: assignment.points_possible || undefined,
           })),
         }));
 
         const errors = [];
         for (const courseData of formattedData) {
           try {
-            await addOrUpdateCourseWithAssignments(courseData); // Assuming this function is adapted to take a userId
+            await addOrUpdateCourseWithAssignments(courseData); 
           } catch (error) {
             console.error(
               `Error processing course ${courseData.canvasCourseId}:`,
@@ -172,7 +173,7 @@ export const assignmentsAndGradesRouter = router({
           return [
             {
               success: false,
-              errors: errors, // Keeping the structure, but as the first item in an array
+              errors: errors, 
             },
           ];
         }
@@ -203,7 +204,8 @@ export const assignmentsAndGradesRouter = router({
           },
         });
 
-        return assignmentsResults.flat();
+        const assignments = await fetchAssignmentsAndCourses();
+        return assignments.flat();
       } catch (error) {
         console.error("Error fetching assignments:", error);
         throw error;
