@@ -60,6 +60,8 @@ model Assignment {
 model Edit {
   id           String     @id @default(cuid())
   assignmentId String
+  grade        String?
+  status       String?    @default("unsubmitted")
   userId       String // Links edit to a specific user
   priority     Int        @default(0)
   dueDate      DateTime?
