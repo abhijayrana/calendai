@@ -111,13 +111,13 @@ export async function fetchAssignmentsAndCourses() {
 }
 
 export async function createOrUpdateEdit({
-  assignmentId: string,
+  assignmentId,
   editData: {
-    priority: number,
-    score: number,
-    grade: string,
-    status: string,
-    dueDate: string,
+    priority,
+    score,
+    grade,
+    status,
+    dueDate,
   },
 }) {
   const { userId } = auth();

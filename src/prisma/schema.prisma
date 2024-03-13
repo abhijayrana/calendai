@@ -53,6 +53,7 @@ model Assignment {
   status      String?  @default("unsubmitted")
   isMissing   Boolean  @default(false)
   pointsPossible Float?
+  estimatedTime Int?
   course      Course   @relation(fields: [courseId], references: [id])
   edits       Edit[] // Assuming edits are now directly linked to assignments
 }
@@ -66,6 +67,8 @@ model Edit {
   priority     Int        @default(0)
   dueDate      DateTime?
   completed    Boolean?
+  estimatedTime Int?
+  pointsPossible Float? 
   assignment   Assignment @relation(fields: [assignmentId], references: [id])
   user         User       @relation(fields: [userId], references: [id])
   createdAt    DateTime   @default(now())
