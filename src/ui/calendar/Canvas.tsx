@@ -1,8 +1,8 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { trpc } from "@/app/_trpc/client";
 import { useUser } from "@clerk/nextjs";
-import '../calendar/styles.css'
+import "../calendar/styles.css";
 
 const parentContainerStyles: React.CSSProperties = {
   position: "relative", // This establishes a new positioning context
@@ -24,15 +24,16 @@ type Assignment = {
 
 // Define types for the props
 type AssignmentCardProps = {
-  assignment: Assignment; 
+  assignment: Assignment;
   isExpanded: boolean;
   toggleExpand: () => void;
 };
 
-const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, isExpanded, toggleExpand }) => {
-
-
-
+const AssignmentCard: React.FC<AssignmentCardProps> = ({
+  assignment,
+  isExpanded,
+  toggleExpand,
+}) => {
   // Card styles
   const cardStyles: React.CSSProperties = {
     border: "1px solid black",
@@ -53,11 +54,11 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, isExpanded,
     score,
     description,
   } = assignment;
-  
+
   const estimatedTime = 30; // Replace with actual estimated time
 
-  const priority = 3
-  
+  const priority = 3;
+
   // Expanded card styles
   const expandedCardStyles: React.CSSProperties = {
     ...cardStyles,
@@ -65,12 +66,12 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, isExpanded,
     backgroundColor: "#f9f9f9", // Optional: change background color when expanded
   };
 
-  const formattedDueDate = new Date(dueDate).toLocaleDateString()
+  const formattedDueDate = new Date(dueDate).toLocaleDateString();
 
-  const priorityIndicators = ['!', '!!', '!!!'];
+  const priorityIndicators = ["!", "!!", "!!!"];
 
   return (
-    <div className={`assignment-card ${isExpanded ? 'expanded' : ''}`}>
+    <div className={`assignment-card ${isExpanded ? "expanded" : ""}`}>
       {!isExpanded ? (
         // The card is only clickable when it's not expanded.
         <div className="assignment-content" onClick={toggleExpand}>
@@ -78,11 +79,12 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, isExpanded,
             <h3 className="assignment-title">{title}</h3>
             <p className="assignment-course">{courseName}</p>
             <p className="assignment-due">Due: {formattedDueDate}</p>
-
           </div>
           <div className="assignment-meta">
             <span className="assignment-time">{estimatedTime} min</span>
-            <button className="priority-button">{priorityIndicators[priority - 1]}</button>
+            <button className="priority-button">
+              {priorityIndicators[priority - 1]}
+            </button>
           </div>
         </div>
       ) : (
@@ -94,27 +96,34 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, isExpanded,
             <p className="assignment-course">{courseName}</p>
             <p className="assignment-due">Due: {formattedDueDate}</p>
             <p className="assignment-points">
-              {score !== undefined ? `${score}/${pointsPossible} points` : `-- / ${pointsPossible} points`}
+              {score !== undefined
+                ? `${score}/${pointsPossible} points`
+                : `-- / ${pointsPossible} points`}
             </p>
           </div>
           <div className="assignment-meta">
-          <div className="close-button" onClick={toggleExpand}>X</div>
+            <div className="close-button" onClick={toggleExpand}>
+              X
+            </div>
 
-            <span className="assignment-time editable">{estimatedTime} min</span>
-            <div>
-            {priorityIndicators.map((indicator, index) => (
-              <button
-                key={index}
-                className={`priority-button ${priority === index + 1 ? 'active' : ''}`}
-                onClick={() => {
-                  // Call a function to update the priority
-                }}
-              >
-                {indicator}
-              </button>
-            ))  
-            }
-            {/* <button className="priority-button">{priorityIndicators[priority - 1]}</button> */}
+            <span className="assignment-time editable">
+              {estimatedTime} min
+            </span>
+            <div className="priority-button-container">
+              {priorityIndicators.map((indicator, index) => (
+                <button
+                  key={index}
+                  className={`priority-button ${
+                    priority === index + 1 ? "active" : ""
+                  }`}
+                  onClick={() => {
+                    // Call a function to update the priority
+                  }}
+                >
+                  {indicator}
+                </button>
+              ))}
+              {/* <button className="priority-button">{priorityIndicators[priority - 1]}</button> */}
             </div>
           </div>
         </div>
@@ -125,9 +134,9 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, isExpanded,
 
 export default function CanvasList() {
   const [visibleAssignments, setVisibleAssignments] = useState<any[]>([]);
-  const [displayCount, setDisplayCount] = useState(15);
   const [isEstablished, setIsEstablished] = useState(false);
-  const [editMode, setEditMode] = useState(true);
+
+  const assignmentListRef = useRef<HTMLDivElement>(null);
 
   const [expandedAssignmentId, setExpandedAssignmentId] = useState<
     string | null
@@ -200,7 +209,7 @@ export default function CanvasList() {
         .flatMap((course: any) =>
           course.assignments.map((assignment: any) => ({
             ...assignment,
-            courseName: course.name || course.title, // Adjust based on your data structure
+            courseName: course.name || course.title,
             dueAtFormatted: new Date(
               assignment.due_at || assignment.dueDate
             ).toLocaleDateString(),
@@ -212,17 +221,34 @@ export default function CanvasList() {
             new Date(b.due_at || b.dueDate).getTime()
         );
 
-      setVisibleAssignments(sortedAssignments.slice(0, displayCount));
+      setVisibleAssignments(sortedAssignments);
     }
-  }, [data, fetchedFromDbData, displayCount, isEstablished]); // Add isEstablished to the dependency array
+  }, [data, fetchedFromDbData, isEstablished]);
+
+  useEffect(() => {
+    if (assignmentListRef.current) {
+      const today = new Date().toISOString().slice(0, 10);
+      const firstAssignmentDueToday = visibleAssignments.findIndex(
+        (assignment) =>
+          new Date(assignment.due_at || assignment.dueDate)
+            .toISOString()
+            .slice(0, 10) >= today
+      );
+
+      if (firstAssignmentDueToday !== -1) {
+        assignmentListRef.current.children[
+          firstAssignmentDueToday
+        ].scrollIntoView({
+          behavior: "auto",
+          block: "start",
+        });
+      }
+    }
+  }, [visibleAssignments]);
 
   if (!isLoaded) {
     return <p>Loading...</p>;
   }
-
-  const showMoreAssignments = () => {
-    setDisplayCount((prevCount) => prevCount + 15);
-  };
 
   if (userInfoIsLoading) {
     return <p>Loading IsUserSetup...</p>;
@@ -255,146 +281,58 @@ export default function CanvasList() {
     return <div>No data available</div>;
   }
 
-  const renderEditableAssignment = (assignment: any) => {
-    return (
-      <div style={{ marginBottom: "20px" }}>
-        {/* Render your form inputs and submit button here, using assignment details to prefill */}
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            // Collect form data and call handleEditSubmit
-            const updatedDetails = {}; // Collect your form data here
-            // handleEditSubmit(assignment.id, updatedDetails);
-          }}
-        >
-          <h2>Edit Assignment</h2>
-          <label htmlFor="title">Title</label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            defaultValue={assignment.title}
-          />
-          <br />
-          <label htmlFor="description">Description</label>
-          <textarea
-            id="description"
-            name="description"
-            defaultValue={assignment.description}
-          ></textarea>
-          <br />
-          <label htmlFor="dueDate">Due Date</label>
-          <input
-            type="date"
-            id="dueDate"
-            name="dueDate"
-            defaultValue={assignment.dueDate}
-          />
-          <br />
-          <label htmlFor="pointsPossible">Points Possible</label>
-          <input
-            type="number"
-            id="pointsPossible"
-            name="pointsPossible"
-            defaultValue={assignment.pointsPossible}
-          />
-          <br />
-          <label htmlFor="priority">Priority</label>
-          <input
-            type="number"
-            id="priority"
-            name="priority"
-            defaultValue={assignment.priority}
-          />
-          <br />
-
-          <button type="submit">Save Changes</button>
-        </form>
-      </div>
-    );
-  };
 
   return (
     <div style={parentContainerStyles}>
-      <p
+      <div
         style={{
-          fontSize: "1.5rem",
-          margin: "10px",
           position: "sticky",
           top: "0",
+          backgroundColor: "white",
+          zIndex: 1,
+          padding: "10px",
         }}
       >
-        Canvas Assignments
-      </p>
-
+        <p
+          style={{
+            fontSize: "1.5rem",
+            margin: "0",
+          }}
+        >
+          Canvas Assignments
+        </p>
+      </div>
+  
       <div style={{ marginTop: "20px" }}>
         <button
           onClick={() => {
             refetch();
-
             setIsEstablished(false);
           }}
           style={{ display: isEstablished ? "block" : "none" }}
         >
           Sync
         </button>
-        {/* {editMode &&
-          visibleAssignments.length > 0 &&
-          renderEditableAssignment(visibleAssignments[0])} */}
-        {visibleAssignments.map((assignment, index) => (
-          <div
-            key={index}
-          >
-            <AssignmentCard key={assignment.id} assignment={assignment} isExpanded={expandedAssignmentId===assignment.id} toggleExpand={() => toggleExpand(assignment.id)}/>
-            {/* {!assignment.isMissing && assignment.status == "unsubmitted" && (
-              <>
-                <h2>{assignment.title}</h2>
-                <p>Unsubmitted</p>
-                <p>Due: {assignment.dueAtFormatted}</p>
-                <p>Points Possible: {assignment.pointsPossible}</p>
-                <p>Course: {assignment.courseName}</p>
-              </>
-            )}
-            {assignment.isMissing && (
-              <>
-                <h2>{assignment.title} </h2>
-                <p>Missing</p>
-                <p>Due: {assignment.dueAtFormatted}</p>
-                <p>Points Possible: {assignment.pointsPossible}</p>
-                <p>Course: {assignment.courseName}</p>
-              </>
-            )}
-            {assignment.status == "submitted" && !assignment.score && (
-              <>
-                <h2>{assignment.title}</h2>
-                <p>Submitted</p>
-                <p>Due: {assignment.dueAtFormatted}</p>
-                <p>Points: Not graded yet </p>
-                <p>Points Possible: {assignment.pointsPossible}</p>
-                <p>Course: {assignment.courseName}</p>
-              </>
-            )}
-            {assignment.status == "graded" && assignment.score && (
-              <>
-                <h2>{assignment.title}</h2>
-                <p>Graded</p>
-                <p>Due: {assignment.dueAtFormatted}</p>
-                <p>Points: {assignment.score}</p>
-                <p>Points Possible: {assignment.pointsPossible}</p>
-                <p>Course: {assignment.courseName}</p>
-              </>
-            )} */}
+  
+        <div
+          style={{
+            maxHeight: "calc(90vh - 80px)", // Adjust the height based on your layout
+            overflowY: "auto",
+          }}
+        >
+          <div ref={assignmentListRef}>
+            {visibleAssignments.map((assignment, index) => (
+              <div key={index}>
+                <AssignmentCard
+                  key={assignment.id}
+                  assignment={assignment}
+                  isExpanded={expandedAssignmentId === assignment.id}
+                  toggleExpand={() => toggleExpand(assignment.id)}
+                />
+              </div>
+            ))}
           </div>
-        ))}
-        {visibleAssignments.length <
-          //@ts-ignore
-          (userInfoData?.lmsconfig?.[0]?.syncs === 0
-            ? data
-            : fetchedFromDbData
-          ).flatMap((course: any) => course.assignments).length && (
-          <button onClick={showMoreAssignments}>Show More</button>
-        )}
+        </div>
       </div>
     </div>
   );

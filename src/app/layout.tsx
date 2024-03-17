@@ -23,7 +23,7 @@ export default function RootLayout({
       <Provider>
       <body className={`${inter.className} antialiased`}>
         <Navbar />
-        <div className="h-screen w-full grow p-6 md:overflow-y-auto md:p-12">
+        <div className="h-screen w-full grow p-6 md:overflow-y-auto md:p-8">
           {children}
         </div>
       </body>

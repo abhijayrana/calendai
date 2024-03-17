@@ -102,35 +102,11 @@ export async function fetchCoursesAssignmentsWithGrades(token, url, userId) {
         });
 
         //add a cooldown to avoid rate limit
-        await new Promise((resolve) => setTimeout(resolve, 5000));
+        await new Promise((resolve) => setTimeout(resolve, 2000));
 
 
         let grades = [];
-        let gradesPage = 1;
-        let hasMoreGradesPages = true;
 
-        // while (hasMoreGradesPages) {
-        //   const gradesResponse = await fetch(
-        //     `https://bcp.instructure.com:443/api/v1/courses/${course.id}/students/submissions?student_ids[]=${userId}&grouped=true&per_page=100&page=${page}`,
-        //     { headers }
-        //   );
-        //   if (!gradesResponse.ok) {
-        //     console.error(
-        //       `grades search HTTP error! status: ${gradesResponse.status} ${gradesResponse.statusText}, course ID: ${course.id}`
-        //     );
-        //   }
-
-        //   const linkHeader = gradesResponse.headers.get("link");
-        //   const newGrades = await gradesResponse.json();
-        //   grades.push(...newGrades);
-
-        //   const parsedLink = parseLinkHeader(linkHeader);
-        //   hasMoreGradesPages = !!parsedLink.next;
-
-
-        //   gradesPage++;
-        
-        // }
 
         grades = await fetch(
           `https://${url}.instructure.com/api/v1/courses/${course.id}/students/submissions?student_ids[]=${userId}&grouped=true&per_page=100&page=1`,

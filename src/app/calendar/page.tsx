@@ -46,19 +46,17 @@ const Page: React.FC = () => {
 
   return (
     <div className="flex h-full">
-      {/* {user?.username && <div>{user.username}</div>} */}
-      {isLmsSetup ? (
-        <>
-        <p>{data?.lms}</p>
-          <div className="flex-1 p-4 border-r overflow-auto">
-            <Canvas />
-          </div>
-          <div className="flex-1 p-4 border-r overflow-auto">
-            <Calendar />
-          </div>
-          <div className="flex-1 p-4 overflow-auto">
+        {isLmsSetup ? (
+          <>
+            <div className="flex-1 p-4 border-r overflow-auto" style={{ flex: 4 }}>
+          <Canvas />
+            </div>
+            <div className="flex-1 p-4 overflow-auto" style={{ flex: 6 }}>
+          <Calendar />
+            </div>
+          {/* <div className="flex-1 p-4 overflow-auto">
             <ToDo />
-          </div>
+          </div> */}
         </>
       ) : (
         <div>

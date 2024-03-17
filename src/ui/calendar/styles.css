@@ -70,6 +70,14 @@
   cursor: text;
 }
 
+.priority-button-container {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px; /* Spacing between buttons */
+}
+
+
 .priority-button {
   color: rgb(188, 5, 5);
   border: none;
@@ -78,6 +86,7 @@
   cursor: pointer;
   margin-top: 5px;
   font-weight: bold;
+  min-width: 30px;
 }
 
 .expanded .priority-button {
@@ -93,9 +102,12 @@
 .expanded .priority-button.active {
   background-color: rgb(188, 5, 5);
   color: white;
-  border: none;
-  border-radius: 5px;
-  padding: 5px 10px;
-  cursor: pointer;
-  margin-top: 10px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .priority-button {
+    padding: 5px 8px; /* Slightly reduce padding on small screens */
+    min-width: 50px; /* Adjust minimum width for smaller screens */
+  }
 }
