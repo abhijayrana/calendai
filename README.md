@@ -1,2 +1,3 @@
 ## Calendai
 powerschool + canvas integration for automated workday planning
+too busy to finish dev rn...
