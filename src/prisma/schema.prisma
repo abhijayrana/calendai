@@ -13,7 +13,7 @@ model User {
   email       String       @unique
   username    String       @unique
   clerkAuthId String       @unique
-  LMS         String? 
+  LMS         String?
   lmsconfig   Json? // For storing LMS tokens, school IDs, etc., securely
   preferences Json?        @default("{\"theme\":\"dark\", \"tier\":\"basic\"}")
   enrollments Enrollment[]
@@ -29,6 +29,7 @@ model Course {
   canvasCourseId String       @unique
   assignments    Assignment[]
   enrollments    Enrollment[]
+  edits          Edit[] // This line represents the course's edits to assignments
 }
 
 model Enrollment {
@@ -42,36 +43,40 @@ model Enrollment {
 }
 
 model Assignment {
-  id          String   @id @default(cuid())
-  title       String
-  description String?
-  dueDate     DateTime
-  priority    Int      @default(0)
-  courseId    String
-  score       Float?
-  grade       String?
-  status      String?  @default("unsubmitted")
-  isMissing   Boolean  @default(false)
+  id             String   @id @default(cuid())
+  title          String
+  description    String?
+  dueDate        DateTime
+  priority       Int      @default(0)
+  courseId       String
+  score          Float?
+  grade          String?
+  status         String?  @default("unsubmitted")
+  isMissing      Boolean  @default(false)
   pointsPossible Float?
-  estimatedTime Int?
-  course      Course   @relation(fields: [courseId], references: [id])
-  edits       Edit[] // Assuming edits are now directly linked to assignments
+  estimatedTime  Int?
+  course         Course   @relation(fields: [courseId], references: [id])
+  edits          Edit[] // Assuming edits are now directly linked to assignments
 }
 
 model Edit {
-  id           String     @id @default(cuid())
-  assignmentId String
-  grade        String?
-  status       String?    @default("unsubmitted")
-  userId       String // Links edit to a specific user
-  priority     Int        @default(0)
-  dueDate      DateTime?
-  completed    Boolean?
-  estimatedTime Int?
-  pointsPossible Float? 
-  assignment   Assignment @relation(fields: [assignmentId], references: [id])
-  user         User       @relation(fields: [userId], references: [id])
-  createdAt    DateTime   @default(now())
+  id             String     @id @default(cuid())
+  assignmentId   String
+  grade          String?
+  status         String?    @default("unsubmitted")
+  courseId       String
+  userId         String // Links edit to a specific user
+  priority       Int        @default(0)
+  dueDate        DateTime?
+  completed      Boolean?
+  estimatedTime  Int?
+  pointsPossible Float?
+  assignment     Assignment @relation(fields: [assignmentId], references: [id])
+  course         Course     @relation(fields: [courseId], references: [id])
+  user           User       @relation(fields: [userId], references: [id])
+  createdAt      DateTime   @default(now())
+
+  @@unique([userId, assignmentId], name: "userId_assignmentId")
 }
 
 model Todo {

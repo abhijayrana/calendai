@@ -8,8 +8,10 @@ import z from "zod";
 import prisma from "@database/prisma";
 import {
   addOrUpdateCourseWithAssignments,
+  executeForceUpdatePriorityAndEstimatedTime,
   fetchAssignmentsAndCourses,
 } from "@/utils/database/api";
+import { TRPCError } from "@trpc/server";
 
 // Define processData function
 const processData = (data: any) => {
@@ -156,7 +158,7 @@ export const assignmentsAndGradesRouter = router({
         const errors = [];
         for (const courseData of formattedData) {
           try {
-            await addOrUpdateCourseWithAssignments(courseData); 
+            await addOrUpdateCourseWithAssignments(courseData);
           } catch (error) {
             console.error(
               `Error processing course ${courseData.canvasCourseId}:`,
@@ -173,7 +175,7 @@ export const assignmentsAndGradesRouter = router({
           return [
             {
               success: false,
-              errors: errors, 
+              errors: errors,
             },
           ];
         }
@@ -226,5 +228,76 @@ export const assignmentsAndGradesRouter = router({
   fetchAssignmentsFromDb: procedure.query(async () => {
     const assignments = await fetchAssignmentsAndCourses();
     return assignments.flat();
+  }),
+
+  forceUpdatePrioAndTime: procedure.query(async () => {
+    await executeForceUpdatePriorityAndEstimatedTime();
+    return "Force update complete";
+  }),
+
+  edit: procedure
+  .input(
+    z.object({
+      id: z.string(),
+      priority: z.number().optional(),
+      estimatedTime: z.number().optional(),
+      status: z.enum(['unsubmitted', 'submitted', 'graded']).optional(),
+      pointsPossible: z.number().optional(),
+      userClerkId: z.string(),
+    })
+  )
+  .mutation(async (opts) => {
+    const { id, priority, estimatedTime, status, pointsPossible } = opts.input;
+    const user = await prisma.user.findUnique({
+      where: { clerkAuthId: opts.input.userClerkId },
+    });
+    const userId = user?.id;
+
+    if (!userId) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    const assignment = await prisma.assignment.findUnique({
+      where: { id },
+      include: { course: true },
+    });
+
+    if (!assignment) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'Assignment not found',
+      });
+    }
+
+    const courseId = assignment.course.id;
+
+    const edit = await prisma.edit.upsert({
+      where: {
+        userId_assignmentId: {
+          userId,
+          assignmentId: id,
+        },
+      },
+      create: {
+        userId,
+        assignmentId: id,
+        courseId,
+        priority,
+        estimatedTime,
+        status,
+        pointsPossible,
+      },
+      update: {
+        priority,
+        estimatedTime,
+        status,
+        pointsPossible,
+      },
+    });
+
+    return edit;
   }),
 });

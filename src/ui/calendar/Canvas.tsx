@@ -20,6 +20,7 @@ type Assignment = {
   status: "unsubmitted" | "submitted" | "graded";
   description?: string;
   score?: number;
+  estimatedTime?: number;
 };
 
 // Define types for the props
@@ -27,45 +28,71 @@ type AssignmentCardProps = {
   assignment: Assignment;
   isExpanded: boolean;
   toggleExpand: () => void;
+  user: any;
 };
 
 const AssignmentCard: React.FC<AssignmentCardProps> = ({
   assignment,
   isExpanded,
   toggleExpand,
+  user,
 }) => {
-  // Card styles
-  const cardStyles: React.CSSProperties = {
-    border: "1px solid black",
-    margin: "10px",
-    padding: "10px",
-    borderRadius: "5px",
-    transition: "all 0.3s ease-in-out",
-    cursor: "pointer",
-    overflow: "hidden", // Ensures content does not flow out of the card
+  const { title, courseName, dueDate, score, description } = assignment;
+
+  const [priority, setPriority] = useState(assignment.priority || 2);
+  const [estimatedTime, setEstimatedTime] = useState(
+    assignment.estimatedTime || 0
+  );
+  const [status, setStatus] = useState(assignment.status || "unsubmitted");
+  const [pointsPossible, setPointsPossible] = useState(
+    assignment.pointsPossible
+  );
+
+  const editAssignment = trpc.assignmentsAndGrades.edit.useMutation();
+
+  const handlePriorityChange = (newPriority: number) => {
+    setPriority(newPriority);
+    editAssignment.mutate({
+      id: assignment.id,
+      priority: newPriority,
+      userClerkId: user.id, // Add the user's clerkAuthId
+    });
   };
 
-  const {
-    title,
-    courseName,
-    dueDate,
-    pointsPossible,
-    // priority = 1,
-    score,
-    description,
-  } = assignment;
-
-  const estimatedTime = 30; // Replace with actual estimated time
-
-  const priority = 3;
-
-  // Expanded card styles
-  const expandedCardStyles: React.CSSProperties = {
-    ...cardStyles,
-    maxHeight: "none", // Remove max-height when expanded
-    backgroundColor: "#f9f9f9", // Optional: change background color when expanded
+  const handleEstimatedTimeChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newEstimatedTime = parseInt(e.target.value);
+    setEstimatedTime(newEstimatedTime);
+    editAssignment.mutate({
+      id: assignment.id,
+      estimatedTime: newEstimatedTime,
+      userClerkId: user.id, // Add the user's clerkAuthId
+    });
   };
 
+  const handleStatusChange = (
+    newStatus: "unsubmitted" | "submitted" | "graded"
+  ) => {
+    setStatus(newStatus);
+    editAssignment.mutate({
+      id: assignment.id,
+      status: newStatus,
+      userClerkId: user.id, // Add the user's clerkAuthId
+    });
+  };
+
+  const handlePointsPossibleChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const newPointsPossible = parseFloat(e.target.value);
+    setPointsPossible(newPointsPossible);
+    editAssignment.mutate({
+      id: assignment.id,
+      pointsPossible: newPointsPossible,
+      userClerkId: user.id, // Add the user's clerkAuthId
+    });
+  };
   const formattedDueDate = new Date(dueDate).toLocaleDateString();
 
   const priorityIndicators = ["!", "!!", "!!!"];
@@ -96,9 +123,22 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({
             <p className="assignment-course">{courseName}</p>
             <p className="assignment-due">Due: {formattedDueDate}</p>
             <p className="assignment-points">
-              {score !== undefined
-                ? `${score}/${pointsPossible} points`
-                : `-- / ${pointsPossible} points`}
+              <>
+                {score !== null ? <span>{score}</span> : <span>--</span>}
+                {" / "}
+                {assignment.status === "unsubmitted" ? (
+                  <input
+                    type="number"
+                    value={pointsPossible !== null ? pointsPossible : "--"}
+                    onChange={handlePointsPossibleChange}
+                    className="input-right-aligned"
+                    style={{ width: "60px" }}
+                  />
+                ) : (
+                  <span>{pointsPossible !== null ? pointsPossible : "--"}</span>
+                )}
+                {" points"}
+              </>
             </p>
           </div>
           <div className="assignment-meta">
@@ -106,9 +146,16 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({
               X
             </div>
 
-            <span className="assignment-time editable">
-              {estimatedTime} min
-            </span>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              <input
+                type="number"
+                value={estimatedTime}
+                onChange={handleEstimatedTimeChange}
+                className="input-right-aligned"
+                style={{ flexGrow: 1 }}
+              />
+              <span style={{ marginLeft: "4px" }}>mins</span>
+            </div>
             <div className="priority-button-container">
               {priorityIndicators.map((indicator, index) => (
                 <button
@@ -116,15 +163,24 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({
                   className={`priority-button ${
                     priority === index + 1 ? "active" : ""
                   }`}
-                  onClick={() => {
-                    // Call a function to update the priority
-                  }}
+                  onClick={() => handlePriorityChange(index + 1)}
                 >
                   {indicator}
                 </button>
               ))}
-              {/* <button className="priority-button">{priorityIndicators[priority - 1]}</button> */}
             </div>
+            <select
+              value={status}
+              onChange={(e) =>
+                handleStatusChange(
+                  e.target.value as "unsubmitted" | "submitted" | "graded"
+                )
+              }
+            >
+              <option value="unsubmitted">Unsubmitted</option>
+              <option value="submitted">Submitted</option>
+              <option value="graded">Graded</option>
+            </select>
           </div>
         </div>
       )}
@@ -168,6 +224,16 @@ export default function CanvasList() {
       },
       { enabled: false }
     );
+
+  const {
+    data: forcedPriorityData,
+    isLoading: forcedPriorityIsLoading,
+    isError: forcedPriorityIsError,
+    error: forcedPriorityError,
+    refetch: refetchPriority,
+  } = trpc.assignmentsAndGrades.forceUpdatePrioAndTime.useQuery(undefined, {
+    enabled: false,
+  });
 
   const {
     data: fetchedFromDbData,
@@ -246,6 +312,13 @@ export default function CanvasList() {
     }
   }, [visibleAssignments]);
 
+  useEffect(() => {
+    if (forcedPriorityData) {
+      console.log("forcedPriorityData", forcedPriorityData);
+      refetch();
+    }
+  }, [forcedPriorityData, refetch]);
+
   if (!isLoaded) {
     return <p>Loading...</p>;
   }
@@ -281,7 +354,6 @@ export default function CanvasList() {
     return <div>No data available</div>;
   }
 
-
   return (
     <div style={parentContainerStyles}>
       <div
@@ -302,7 +374,7 @@ export default function CanvasList() {
           Canvas Assignments
         </p>
       </div>
-  
+
       <div style={{ marginTop: "20px" }}>
         <button
           onClick={() => {
@@ -313,7 +385,14 @@ export default function CanvasList() {
         >
           Sync
         </button>
-  
+        <button
+          onClick={() => {
+            refetchPriority();
+          }}
+          style={{ display: isEstablished ? "block" : "none" }}
+        >
+          Force Update
+        </button>
         <div
           style={{
             maxHeight: "calc(90vh - 80px)", // Adjust the height based on your layout
@@ -328,6 +407,7 @@ export default function CanvasList() {
                   assignment={assignment}
                   isExpanded={expandedAssignmentId === assignment.id}
                   toggleExpand={() => toggleExpand(assignment.id)}
+                  user={user}
                 />
               </div>
             ))}

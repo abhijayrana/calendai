@@ -51,6 +51,7 @@ export async function addOrUpdateCourseWithAssignments(data) {
       // If the assignment is not in the database, call the OpenAI API and add it with priority and estimatedTime
       const prompt = `
         Assignment Title: ${assignment.title}
+        Course: ${course.title}
         Description: ${assignment.description}
         Due Date: ${assignment.dueDate}
         Points Possible: ${assignment.points_possible}
@@ -121,30 +122,48 @@ export async function addOrUpdateCourseWithAssignments(data) {
   return "done";
 }
 
-async function createEditForUser(assignment, userId) {
-  // Call the LLM API to generate priority and estimated time
-  const llmInput = `Assignment Title: ${assignment.title}\nDescription: ${assignment.description}\nDue Date: ${assignment.dueDate}\n\nGenerate the priority level (1-3) and estimated time to finish this assignment:`;
-  const llmOutput = await feedAssignmentToLLM(llmInput);
+export async function executeForceUpdatePriorityAndEstimatedTime() {
+  try {
+    // Retrieve all assignments from the database
+    const assignments = await prisma.assignment.findMany();
 
-  // Process the LLM output and extract the generated values
-  const priorityLevel = extractPriorityLevel(llmOutput);
+    // Iterate over each assignment and run forceUpdatePriorityAndEstimatedTime
+    for (const assignment of assignments) {
+      await forceUpdatePriorityAndEstimatedTime(assignment);
+    }
+
+    console.log('Force update completed for all assignments.');
+  } catch (error) {
+    console.error('Error during force update:', error);
+  }
+}
+
+
+async function forceUpdatePriorityAndEstimatedTime(assignment) {
+  const prompt = `
+    Assignment Title: ${assignment.title}
+    Description: ${assignment.description}
+    Due Date: ${assignment.dueDate}
+    Points Possible: ${assignment.pointsPossible}
+  `;
+
+  const llmOutput = await feedAssignmentToLLM(prompt);
+  const priority = extractPriorityLevel(llmOutput);
   const estimatedTime = extractEstimatedTime(llmOutput);
 
-  // Create an edit for the user with the entire assignment object and generated values
-  await prisma.edit.create({
+  await prisma.assignment.update({
+    where: {
+      id: assignment.id,
+    },
     data: {
-      assignmentId: assignment.id,
-      userId,
-      grade: assignment.grade,
-      status: assignment.status,
-      priority: priorityLevel,
-      dueDate: assignment.dueDate,
-      completed: false,
+      priority,
       estimatedTime,
-      pointsPossible: assignment.pointsPossible,
     },
   });
 }
+
+
+
 
 export async function fetchAssignmentsAndCourses() {
   const { userId } = auth();

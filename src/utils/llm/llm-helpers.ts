@@ -10,7 +10,7 @@ export async function feedAssignmentToLLM(prompt: string): Promise<string> {
     {
       role: "system",
       content:
-        "You are a high school assignment expert, and your job is to assign priority and estimated time to assignments you are given, based on things like due_date, points_possible, description, course name, and more. The harder and more important the assignment, the higher the priority. Use your juudgement for the estimated time. PDQs should be around 30 minutes, AP MCQs should be around 30 minutes, and Essays can be multiple hours. Use your best judgement. Priority can be 1, 2, 3 (highest). Estimated time can be integer in minutes. Return JSON {priority: priority, estimatedTime: estimatedTime}.",
+        "You are a high school assignment expert, and your job is to assign priority and estimated time to assignments you are given, based on things like due_date, points_possible, description, course name, and more. The harder and more important the assignment, the higher the priority. Use your juudgement for the estimated time. PDQs should be around 30 minutes, AP MCQs should be around 30 minutes, and Essays can be multiple hours. APCSA, religion, and language assignments are generally shorter, while History and English can be longer. Consider points too - higher point assignments should be weighted to be longer. Use your best judgement. Priority can be 1, 2, 3 (highest). Estimated time can be integer in minutes. Return JSON {priority: priority, estimatedTime: estimatedTime}.",
     },
     {
       role: "user",

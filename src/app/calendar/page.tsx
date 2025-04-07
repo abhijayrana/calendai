@@ -36,7 +36,7 @@ const Page: React.FC = () => {
 
 
   if(isLoading) {
-    return <p>Loading IsUserSetup...</p>;
+    return <p>Loading IsUserSetup with LMS GMS...</p>;
   }
 
   // Checking if the LMS setup query was successful or exists

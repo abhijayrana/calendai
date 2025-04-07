@@ -111,3 +111,27 @@
     min-width: 50px; /* Adjust minimum width for smaller screens */
   }
 }
+
+.pts-input {
+  text-align: right;
+  box-sizing: border-box;
+
+}
+
+.input-right-aligned {
+  text-align: right;
+  box-sizing: border-box;
+  appearance: textfield;
+  -moz-appearance: textfield;
+  border: 2px dashed #ccc;
+  padding: 4px;
+  width: 60px;
+  font-size: 1rem;
+  
+}
+
+.input-right-aligned::-webkit-inner-spin-button,
+.input-right-aligned::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
